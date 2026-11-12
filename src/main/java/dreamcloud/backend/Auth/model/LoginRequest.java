@@ -1,8 +1,10 @@
-package dreamcloud.backend.model.dto;
+package dreamcloud.backend.Auth.model;
 
-import dreamcloud.backend.model.entry.User;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.beans.BeanUtils;
+
+import dreamcloud.backend.User.model.User;
 
 @Data
 @NoArgsConstructor
@@ -12,8 +14,7 @@ public class LoginRequest {
 
     public static LoginRequest from(User user){
         LoginRequest dto = new LoginRequest();
-        dto.setUsername(user.getUsername());
-        dto.setPassword(user.getPassword());
+        BeanUtils.copyProperties(user,dto);
         return dto;
     }
 }

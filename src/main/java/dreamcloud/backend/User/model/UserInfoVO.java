@@ -1,20 +1,23 @@
-package dreamcloud.backend.model.vo;
+package dreamcloud.backend.User.model;
 
-import dreamcloud.backend.model.entry.User;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.beans.BeanUtils;
+
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
 public class UserInfoVO {
     private String username;
     private String avatarUrl;
+    private Long planId;
+    private LocalDateTime createTime;
+    private LocalDateTime updateTime;
 
     public static UserInfoVO from(User user) {
         UserInfoVO vo = new UserInfoVO();
-        vo.setUsername(user.getUsername());
-        vo.setAvatarUrl(user.getAvatarUrl());
+        BeanUtils.copyProperties(user,vo);
         return vo;
     }
 }

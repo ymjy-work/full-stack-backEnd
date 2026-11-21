@@ -1,23 +1,27 @@
 package dreamcloud.backend.User.model;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.springframework.beans.BeanUtils;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.time.LocalDateTime;
 
-@Data
-@NoArgsConstructor
-public class UserInfoVO {
-    private String username;
-    private String avatarUrl;
-    private Long planId;
-    private LocalDateTime createTime;
-    private LocalDateTime updateTime;
-
+public record UserInfoVO(
+        String username,
+        String avatarUrl,
+        Long planId,
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime createTime,
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime updateTime
+) {
     public static UserInfoVO from(User user) {
-        UserInfoVO vo = new UserInfoVO();
-        BeanUtils.copyProperties(user,vo);
-        return vo;
+        if (user == null) {
+            return null;
+        }
+
+        return new UserInfoVO(
+                user.getUsername(),
+                user.getAvatarUrl(),
+                user.getPlanId(),
+                user.getCreateTime(),
+                user.getUpdateTime()
+        );
     }
 }

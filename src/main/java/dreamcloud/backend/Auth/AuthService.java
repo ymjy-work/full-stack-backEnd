@@ -7,9 +7,11 @@ import dreamcloud.backend.Auth.model.RegisterRequest;
 import dreamcloud.backend.User.model.User;
 import dreamcloud.backend.User.model.UserInfoVO;
 import dreamcloud.backend.User.UserMapper;
+import dreamcloud.backend.common.exception.BusinessException;
+import dreamcloud.backend.common.exception.ErrorCode;
 import dreamcloud.backend.common.utils.TokenGenerator;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
@@ -20,7 +22,7 @@ import java.time.LocalDateTime;
 public class AuthService {
     private final UserMapper userMapper;
     private final LoginTokenMapper loginTokenMapper;
-    private final PasswordEncoder passwordEncoder;
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final TokenGenerator tokenGenerator;
 
     private static final int TOKEN_EXPIRES_DAYS = 7;
@@ -37,12 +39,12 @@ public class AuthService {
 
     @Transactional(rollbackFor = Exception.class)
     public AuthResponse register(RegisterRequest dto){
-        if (userMapper.findByUsername(dto.getUsername())!=null){
-            throw  new RuntimeException("用户已存在");
+        if (userMapper.findByUsername(dto.username())!=null){
+            throw new BusinessException(ErrorCode.USERNAME_ALREADY_EXISTS);
         }
         User user = new User();
-        user.setUsername(dto.getUsername());
-        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        user.setUsername(dto.username());
+        user.setPassword(passwordEncoder.encode(dto.password()));
         user.setPlanId(DEFAULT_PLAN_ID);
         userMapper.insert(user);
 
@@ -50,9 +52,9 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest dto){
-        User user = userMapper.findByUsername(dto.getUsername());
-        if(user == null || !passwordEncoder.matches(dto.getPassword(),user.getPassword())){
-            throw new RuntimeException("用户名/密码错误");
+        User user = userMapper.findByUsername(dto.username());
+        if(user == null || !passwordEncoder.matches(dto.password(),user.getPassword())){
+            throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
         }
         return new AuthResponse(createToken(user),UserInfoVO.from(user));
     }

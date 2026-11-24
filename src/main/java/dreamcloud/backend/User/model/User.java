@@ -13,6 +13,7 @@ public class User {
     private Long id;
     private String username;
     private String password;
+    private Long balanceCents;
     private Long planId;
     private String avatarUrl;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

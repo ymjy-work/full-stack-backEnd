@@ -4,9 +4,10 @@ import dreamcloud.backend.Auth.model.AuthResponse;
 import dreamcloud.backend.Auth.model.LoginRequest;
 import dreamcloud.backend.Auth.model.LoginToken;
 import dreamcloud.backend.Auth.model.RegisterRequest;
+import dreamcloud.backend.Plan.PlanMapper;
 import dreamcloud.backend.User.model.User;
-import dreamcloud.backend.User.model.UserInfoVO;
 import dreamcloud.backend.User.UserMapper;
+import dreamcloud.backend.User.model.UserInfoVO;
 import dreamcloud.backend.common.exception.BusinessException;
 import dreamcloud.backend.common.exception.ErrorCode;
 import dreamcloud.backend.common.utils.TokenGenerator;
@@ -22,11 +23,12 @@ import java.time.LocalDateTime;
 public class AuthService {
     private final UserMapper userMapper;
     private final LoginTokenMapper loginTokenMapper;
+    private final PlanMapper planMapper;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final TokenGenerator tokenGenerator;
 
     private static final int TOKEN_EXPIRES_DAYS = 7;
-    private static final Long DEFAULT_PLAN_ID = 1L;
+    private static final String DEFAULT_PLAN_NAME = "free";
 
     private String createToken(User user){
         LoginToken loginToken = new LoginToken();
@@ -45,10 +47,12 @@ public class AuthService {
         User user = new User();
         user.setUsername(dto.username());
         user.setPassword(passwordEncoder.encode(dto.password()));
-        user.setPlanId(DEFAULT_PLAN_ID);
+        user.setPlanId(planMapper.findByName(DEFAULT_PLAN_NAME).getId());
+        //创建账户免费发放20余额用于测试订阅
+        user.setBalanceCents(2000L);
         userMapper.insert(user);
 
-        return new AuthResponse(createToken(user),UserInfoVO.from(userMapper.findByUsername(user.getUsername())));
+        return new AuthResponse(createToken(user), UserInfoVO.from(userMapper.findByUsername(user.getUsername())));
     }
 
     public AuthResponse login(LoginRequest dto){
@@ -56,7 +60,7 @@ public class AuthService {
         if(user == null || !passwordEncoder.matches(dto.password(),user.getPassword())){
             throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
         }
-        return new AuthResponse(createToken(user),UserInfoVO.from(user));
+        return new AuthResponse(createToken(user), UserInfoVO.from(user));
     }
 
     public void logout(String  token){

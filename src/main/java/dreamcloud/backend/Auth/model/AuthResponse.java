@@ -5,6 +5,7 @@ import dreamcloud.backend.User.model.UserInfoVO;
 
 public record AuthResponse(
         String token,
-        @JsonUnwrapped UserInfoVO userInfo
+        @JsonUnwrapped
+        UserInfoVO userInfo
 ) {
 }

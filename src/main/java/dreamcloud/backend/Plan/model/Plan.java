@@ -12,4 +12,7 @@ public class Plan {
     private String name;
     private String description;
     private Long priceCents;
+    private Long monthlyQuota;
+    private int duration_days;
+    private int status;
 }

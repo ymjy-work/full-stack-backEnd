@@ -28,11 +28,11 @@ CREATE TABLE login_token(
 );
 
 -- 初始化数据
-INSERT INTO plan (name, description, price_cents)
+INSERT INTO plans (name, description, price_cents)
 VALUES ('free','免费用户套餐\n每月100积分','0');
-INSERT INTO plan (name, description, price_cents)
+INSERT INTO plans (name, description, price_cents)
 VALUES ('plus','plus用户套餐\n每月1000积分','2000');
-INSERT INTO plan (name, description, price_cents)
+INSERT INTO plans (name, description, price_cents)
 VALUES ('pro','pro用户套餐\n每月4000积分','6000');
-INSERT INTO plan (name, description, price_cents)
+INSERT INTO plans (name, description, price_cents)
 VALUES ('ultra','ultra用户套餐\n每月8000积分','10000');

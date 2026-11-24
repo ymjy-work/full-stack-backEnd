@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:sqlite:target/test-backend.db
+    driver-class-name: org.sqlite.JDBC
+    hikari:
+      maximum-pool-size: 1
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema-test.sql
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+  type-handlers-package: dreamcloud.backend.common.mybatis

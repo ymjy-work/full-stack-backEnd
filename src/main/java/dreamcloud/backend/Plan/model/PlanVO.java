@@ -3,13 +3,13 @@ package dreamcloud.backend.Plan.model;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
-public record PlanVo(
+public record PlanVO(
         Long id,
         String name,
         String description,
         BigDecimal price
         ) {
-    public static PlanVo from(Plan entity) {
+    public static PlanVO from(Plan entity) {
         if (entity == null) {
             return null;
         }
@@ -20,7 +20,7 @@ public record PlanVo(
                 : BigDecimal.valueOf(entity.getPriceCents())
                 .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
 
-        return new PlanVo(
+        return new PlanVO(
                 entity.getId(),
                 entity.getName(),
                 entity.getDescription(),

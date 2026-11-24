@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus;
 @Getter
 public enum ErrorCode {
     BAD_REQUEST(HttpStatus.BAD_REQUEST, 40000, "请求参数错误"),
+    INSUFFICIENT_BALANCE(HttpStatus.BAD_REQUEST,40001,"可用余额不足"),
+    INSUFFICIENT_QUOTA(HttpStatus.BAD_REQUEST,40002,"额度不足"),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, 40100, "未登录或令牌已过期"),
     INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, 40101, "用户名或密码错误"),
     FORBIDDEN(HttpStatus.FORBIDDEN, 40300, "无权访问该资源"),

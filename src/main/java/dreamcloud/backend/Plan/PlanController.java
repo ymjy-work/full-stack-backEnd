@@ -1,6 +1,6 @@
 package dreamcloud.backend.Plan;
 
-import dreamcloud.backend.Plan.model.PlanVo;
+import dreamcloud.backend.Plan.model.PlanVO;
 import dreamcloud.backend.common.result.Result;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,7 +17,7 @@ public class PlanController {
     private final PlanService planService;
 
     @GetMapping
-    public Result<List<PlanVo>> list() {
+    public Result<List<PlanVO>> list() {
         return planService.list();
     }
 }

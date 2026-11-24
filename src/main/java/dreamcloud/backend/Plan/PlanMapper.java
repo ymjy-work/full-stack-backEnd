@@ -7,9 +7,12 @@ import java.util.List;
 
 public interface PlanMapper {
 
-    @Select("select * from plan order by id")
+    @Select("select * from plans order by id")
     List<Plan> findAll();
 
-    @Select("select * from plan where id = #{id}")
+    @Select("select * from plans where id = #{id}")
     Plan findById(Long id);
+
+    @Select("select *from plans where name = #{name}")
+    Plan findByName(String name);
 }

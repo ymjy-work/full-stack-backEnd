@@ -22,46 +22,42 @@ public class BillingService {
     private final UserMapper userMapper;
     private final QuotaPeriodMapper quotaPeriodMapper;
     private final UsageRecordMapper usageRecordMapper;
+    
+    private  final static int PERIOD_DAYS = 30;
 
     @Transactional(rollbackFor = Exception.class)
-    public void subscribe(SubscribeDTO dto){
-        User user = userMapper.findById(UserContext.getUserId());
-        Plan plan = planMapper.findById(dto.planId());
-        //更新用户套餐和余额
-        userMapper.updatePlan(user.getId(),plan.getId());
-        Long balanceAfter = user.getBalanceCents() - plan.getPriceCents();
-        if (balanceAfter<0) throw new BusinessException(ErrorCode.INSUFFICIENT_BALANCE);
-        userMapper.updateBalance(user.getId(),balanceAfter);
+    public QuotaVO upgradePlan(SubscribeDTO dto){
+        Plan targetPlan = planMapper.findById(dto.planId());
+        if(targetPlan == null) throw new BusinessException(ErrorCode.NOT_FOUND_PLAN);
+        Long userId = UserContext.getUserId();
+        QuotaPeriod currPeriod = currentPeriod(userId);
+        Plan currPlan = planMapper.findById(currPeriod.getPlanId());
+        //TODO "="情况一个是续费考虑还有一个避免free无限刷额度后续需要额外处理这2个情况
+//        更新用户订阅
+        if(targetPlan.getLevel()<=currPlan.getLevel()) throw new BusinessException(ErrorCode.PLAN_NOT_UPGRADABLE);
+        int row = userMapper.updateBalance(userId, Long.valueOf(-targetPlan.getPriceCents()));
+        if(row!=1){
+            throw new BusinessException(ErrorCode.INSUFFICIENT_BALANCE);
+        }
+        userMapper.updatePlan(userId,targetPlan.getId());
 
-        //创建套餐周期
-        QuotaPeriod quotaPeriod = new QuotaPeriod();
-        quotaPeriod.setPlanId(plan.getId());
-        quotaPeriod.setUserId(user.getId());
-        quotaPeriod.setPeriodStart(LocalDateTime.now());
-        quotaPeriod.setQuotaLimit(plan.getMonthlyQuota());
-        quotaPeriod.setQuotaUsed(0L);
-        quotaPeriod.setCreateTime(LocalDateTime.now());
-        quotaPeriod.setPeriodEnd(LocalDateTime.now().plusDays(30));
-        quotaPeriodMapper.insert(quotaPeriod);
-        //记录订阅
-        SubscriptionRecord subscriptionRecord = new SubscriptionRecord();
-        subscriptionRecord.setPlanId(dto.planId());
-        subscriptionRecord.setPeriodId(quotaPeriod.getId());
-        subscriptionRecord.setUserId(UserContext.getUserId());
-        subscriptionRecord.setBalanceAfter(balanceAfter);
-        subscriptionRecord.setPriceCents(plan.getPriceCents());
-        subscriptionRecord.setCreateTime(LocalDateTime.now());
-        subscriptionRecordMapper.insert(subscriptionRecord);
+        // 结束当前周期并且新建新订阅周期
+        quotaPeriodMapper.updatePeriodEndById(currPeriod.getId(),LocalDateTime.now());
+        QuotaPeriod newPeriod = createPeriod(userId,targetPlan);
+        //记录订单
+        recordSubscription(targetPlan, newPeriod);
+
+        return QuotaVO.from(newPeriod);
     }
 
     public QuotaVO quota(Long userId){
-        return QuotaVO.from(quotaPeriodMapper.findCurrent(userId));
+        return QuotaVO.from(currentPeriod(userId));
     }
 
     @Transactional(rollbackFor = Exception.class)
     public QuotaVO consume(ConsumeDTO dto){
         //TODO mock测试扣除额度后面换实际的业务
-        Long cost = 10L;
+        Long cost = Long.valueOf("10");
         Long userId = UserContext.getUserId();
 
         QuotaPeriod curr = quotaPeriodMapper.findCurrent(userId);
@@ -81,7 +77,7 @@ public class BillingService {
         UsageRecord usageRecord = new UsageRecord();
         usageRecord.setAmount(cost);
         usageRecord.setPeriodId(updated.getId());
-        usageRecord.setQuotaRemainingAfter(updated.getQuotaLimit() - updated.getQuotaUsed());
+        usageRecord.setQuotaRemainingAfter(Long.valueOf(updated.getQuotaLimit() - updated.getQuotaUsed()));
         usageRecord.setReason(dto.action());
         usageRecord.setRefId(null);
         usageRecord.setUserId(userId);
@@ -91,4 +87,39 @@ public class BillingService {
         return QuotaVO.from(updated);
     }
 
+    private void recordSubscription(Plan targetPlan, QuotaPeriod newPeriod) {
+        SubscriptionRecord subscriptionRecord = new SubscriptionRecord();
+        subscriptionRecord.setPriceCents(targetPlan.getPriceCents());
+        subscriptionRecord.setCreateTime(LocalDateTime.now());
+        subscriptionRecord.setUserId(UserContext.getUserId());
+        subscriptionRecord.setPeriodId(newPeriod.getId());
+        subscriptionRecord.setPlanId(targetPlan.getId());
+        subscriptionRecord.setBalanceAfter(userMapper.findById(UserContext.getUserId()).getBalanceCents());
+        subscriptionRecordMapper.insert(subscriptionRecord);
+    }
+
+    public QuotaPeriod currentPeriod(Long userId){
+        QuotaPeriod current = quotaPeriodMapper.findCurrent(userId);
+        if (current!=null) return current;
+
+        User user = userMapper.findById(userId);
+        Plan free = planMapper.findByName("free");
+        if(!free.getId().equals(user.getPlanId())){
+            userMapper.updatePlan(userId,free.getId());
+        }
+        return createPeriod(userId,free);
+    }
+
+    public QuotaPeriod createPeriod(Long userId,Plan plan){
+        QuotaPeriod quotaPeriod = new QuotaPeriod();
+        quotaPeriod.setUserId(userId);
+        quotaPeriod.setPlanId(plan.getId());
+        quotaPeriod.setQuotaLimit(plan.getMonthlyQuota());
+        quotaPeriod.setQuotaUsed(Long.valueOf("0"));
+        quotaPeriod.setCreateTime(LocalDateTime.now());
+        quotaPeriod.setPeriodStart(LocalDateTime.now());
+        quotaPeriod.setPeriodEnd(LocalDateTime.now().plusDays(PERIOD_DAYS));
+        quotaPeriodMapper.insert(quotaPeriod);
+        return quotaPeriod;
+    }
 }

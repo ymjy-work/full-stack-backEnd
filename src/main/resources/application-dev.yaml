@@ -1,9 +1,11 @@
 spring:
   datasource:
-    url: jdbc:sqlite:data/backEnd.db
-    driver-class-name: org.sqlite.JDBC
+    url: jdbc:mysql://localhost:3306/backend?serverTimezone=Asia/Shanghai&useSSL=false&characterEncoding=utf8&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
-      maximum-pool-size: 1
+      maximum-pool-size: 10
 
   output:
     ansi:

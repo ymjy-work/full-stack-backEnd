@@ -15,9 +15,8 @@ public class BillingController {
     private final BillingService billingService;
 
     @PostMapping("/subscribe")
-    public Result<Void> subscribe(@RequestBody SubscribeDTO dto){
-        billingService.subscribe(dto);
-        return Result.success();
+    public Result<QuotaVO> subscribe(@RequestBody SubscribeDTO dto){
+        return Result.success( billingService.upgradePlan(dto));
     }
 
     @PostMapping("/consume")

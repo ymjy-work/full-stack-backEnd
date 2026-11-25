@@ -60,24 +60,34 @@ class BillingFlowTest {
                 "JSON 时间应为 yyyy-MM-dd HH:mm:ss，实际: " + quota.get("periodEnd").asString());
 
         String stored = jdbcTemplate.queryForObject(
-                "select period_end from quota_period where user_id = ?", String.class, userId);
+                "select period_end from quota_period where user_id = ? and period_end > NOW() " +
+                        "order by period_start desc limit 1", String.class, userId);
         assertTrue(stored.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}"),
                 "数据库时间应为 yyyy-MM-dd HH:mm:ss，实际: " + stored);
     }
 
     @Test
-    void secondSubscribeFailsWhenBalanceInsufficient() throws Exception {
+    void upgradeRejectsSameLevelAndInsufficientBalance() throws Exception {
         String token = register("balance_user");
         subscribe(token, 2L);
 
-        JsonNode body = objectMapper.readTree(mockMvc.perform(post("/billing/subscribe")
+        // 已经是 plus，再订阅 plus：等级检查拒绝
+        JsonNode sameLevel = objectMapper.readTree(mockMvc.perform(post("/billing/subscribe")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"planId\":2}"))
                 .andExpect(status().isBadRequest())
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8));
+        assertEquals(40003, sameLevel.get("code").asInt());
 
-        assertEquals(40001, body.get("code").asInt());
+        // 升级 pro 通过等级检查，但余额不足
+        JsonNode noBalance = objectMapper.readTree(mockMvc.perform(post("/billing/subscribe")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"planId\":3}"))
+                .andExpect(status().isBadRequest())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8));
+        assertEquals(40001, noBalance.get("code").asInt());
     }
 
     @Test
@@ -86,7 +96,8 @@ class BillingFlowTest {
         subscribe(token, 2L);
         Long userId = userId("quota_user");
 
-        jdbcTemplate.update("update quota_period set quota_used = 1990 where user_id = ?", userId);
+        jdbcTemplate.update("update quota_period set quota_used = 1990 " +
+                "where user_id = ? and period_end > NOW()", userId);
 
         assertEquals(200, consume(token).get("code").asInt());
         assertEquals(2000, quotaUsed(userId));
@@ -149,7 +160,8 @@ class BillingFlowTest {
 
     private Integer quotaUsed(Long userId) {
         return jdbcTemplate.queryForObject(
-                "select quota_used from quota_period where user_id = ?", Integer.class, userId);
+                "select quota_used from quota_period where user_id = ? and period_end > NOW() " +
+                        "order by period_start desc limit 1", Integer.class, userId);
     }
 
     private Integer usageCount(Long userId) {

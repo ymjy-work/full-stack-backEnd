@@ -4,6 +4,7 @@ import dreamcloud.backend.Auth.model.AuthResponse;
 import dreamcloud.backend.Auth.model.LoginRequest;
 import dreamcloud.backend.Auth.model.LoginToken;
 import dreamcloud.backend.Auth.model.RegisterRequest;
+import dreamcloud.backend.Billing.BillingService;
 import dreamcloud.backend.Plan.PlanMapper;
 import dreamcloud.backend.User.model.User;
 import dreamcloud.backend.User.UserMapper;
@@ -24,6 +25,7 @@ public class AuthService {
     private final UserMapper userMapper;
     private final LoginTokenMapper loginTokenMapper;
     private final PlanMapper planMapper;
+    private final BillingService billingService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final TokenGenerator tokenGenerator;
 
@@ -51,7 +53,8 @@ public class AuthService {
         //创建账户免费发放20余额用于测试订阅
         user.setBalanceCents(2000L);
         userMapper.insert(user);
-
+        //创建用户套餐周期
+        billingService.currentPeriod(user.getId());
         return new AuthResponse(createToken(user), UserInfoVO.from(userMapper.findByUsername(user.getUsername())));
     }
 

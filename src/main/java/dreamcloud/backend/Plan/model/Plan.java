@@ -15,4 +15,5 @@ public class Plan {
     private Long monthlyQuota;
     private int duration_days;
     private int status;
+    private int level;
 }

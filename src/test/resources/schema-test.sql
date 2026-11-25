@@ -6,75 +6,75 @@ DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS plans;
 
 CREATE TABLE users (
-    id           INTEGER PRIMARY KEY,
-    username     TEXT NOT NULL,
-    password     TEXT NOT NULL,
-    avatar_url   TEXT,
-    create_time  TEXT NOT NULL DEFAULT (datetime('now','localtime')),
-    update_time  TEXT NOT NULL DEFAULT (datetime('now','localtime')),
-    balance_cents INTEGER NOT NULL DEFAULT 0,
-    plan_id      INTEGER NOT NULL DEFAULT 1,
-    UNIQUE (username)
+    id            BIGINT AUTO_INCREMENT PRIMARY KEY,
+    username      VARCHAR(50) NOT NULL,
+    password      VARCHAR(100) NOT NULL,
+    avatar_url    VARCHAR(255),
+    create_time   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    balance_cents BIGINT NOT NULL DEFAULT 0,
+    plan_id       BIGINT NOT NULL DEFAULT 1,
+    CONSTRAINT uk_users_username UNIQUE (username)
 );
 
 CREATE TABLE plans (
-    id            INTEGER PRIMARY KEY,
-    name          TEXT NOT NULL,
-    description   TEXT NOT NULL,
-    price_cents   INTEGER NOT NULL DEFAULT 0,
-    monthly_quota INTEGER NOT NULL DEFAULT 0,
-    duration_days INTEGER NOT NULL DEFAULT 30,
-    status        INTEGER NOT NULL DEFAULT 0,
-    UNIQUE (name)
+    id            BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name          VARCHAR(50) NOT NULL,
+    description   VARCHAR(255) NOT NULL,
+    price_cents   BIGINT NOT NULL DEFAULT 0,
+    monthly_quota BIGINT NOT NULL DEFAULT 0,
+    duration_days INT NOT NULL DEFAULT 30,
+    status        TINYINT NOT NULL DEFAULT 0,
+    level         INT NOT NULL DEFAULT 0,
+    CONSTRAINT uk_plans_name UNIQUE (name)
 );
 
 CREATE TABLE login_token (
-    id           INTEGER PRIMARY KEY,
-    user_id      INTEGER NOT NULL,
-    token        TEXT NOT NULL,
-    expires_time TEXT NOT NULL,
-    create_time  TEXT NOT NULL DEFAULT (datetime('now','localtime')),
-    UNIQUE (token)
+    id           BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id      BIGINT NOT NULL,
+    token        CHAR(64) NOT NULL,
+    expires_time DATETIME NOT NULL,
+    create_time  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_login_token UNIQUE (token)
 );
 
 CREATE TABLE quota_period (
-    id           INTEGER PRIMARY KEY,
-    user_id      INTEGER NOT NULL,
-    plan_id      INTEGER NOT NULL,
-    quota_limit  INTEGER NOT NULL,
-    quota_used   INTEGER NOT NULL DEFAULT 0,
-    period_start TEXT NOT NULL,
-    period_end   TEXT NOT NULL,
-    create_time  TEXT NOT NULL DEFAULT (datetime('now','localtime')),
-    UNIQUE (user_id, period_start)
+    id           BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id      BIGINT NOT NULL,
+    plan_id      BIGINT NOT NULL,
+    quota_limit  BIGINT NOT NULL,
+    quota_used   BIGINT NOT NULL DEFAULT 0,
+    period_start DATETIME NOT NULL,
+    period_end   DATETIME NOT NULL,
+    create_time  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE usage_record (
-    id                    INTEGER PRIMARY KEY,
-    user_id               INTEGER NOT NULL,
-    period_id             INTEGER NOT NULL,
-    amount                INTEGER NOT NULL,
-    quota_remaining_after INTEGER NOT NULL,
-    reason                TEXT NOT NULL,
-    ref_id                TEXT,
-    create_time           TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    id                    BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id               BIGINT NOT NULL,
+    period_id             BIGINT NOT NULL,
+    amount                BIGINT NOT NULL,
+    quota_remaining_after BIGINT NOT NULL,
+    reason                VARCHAR(50) NOT NULL,
+    ref_id                BIGINT,
+    create_time           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE subscription_record (
-    id            INTEGER PRIMARY KEY,
-    user_id       INTEGER NOT NULL,
-    plan_id       INTEGER NOT NULL,
-    price_cents   INTEGER NOT NULL,
-    balance_after INTEGER NOT NULL,
-    period_id     INTEGER NOT NULL,
-    create_time   TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    id            BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id       BIGINT NOT NULL,
+    plan_id       BIGINT NOT NULL,
+    price_cents   BIGINT NOT NULL,
+    balance_after BIGINT NOT NULL,
+    period_id     BIGINT NOT NULL,
+    create_time   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO plans (id, name, description, price_cents, monthly_quota, duration_days, status) VALUES
-    (1, 'free',  'free',  0,     100,  30, 1),
-    (2, 'plus',  'plus',  2000,  2000, 30, 1),
-    (3, 'pro',   'pro',   6000,  4000, 30, 1),
-    (4, 'ultra', 'ultra', 10000, 8000, 30, 1);
+INSERT INTO plans (id, name, description, price_cents, monthly_quota, duration_days, status, level) VALUES
+    (1, 'free',  'free',  0,     100,  30, 1, 0),
+    (2, 'plus',  'plus',  2000,  2000, 30, 1, 1),
+    (3, 'pro',   'pro',   6000,  4000, 30, 1, 2),
+    (4, 'ultra', 'ultra', 10000, 8000, 30, 1, 3);
 
 INSERT INTO users (id, username, password, plan_id, balance_cents)
 VALUES (1, 'admin', '$2a$10$abcdefghijklmnopqrstuv', 1, 2000);

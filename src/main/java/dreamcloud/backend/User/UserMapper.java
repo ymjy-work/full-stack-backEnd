@@ -18,9 +18,11 @@ public interface UserMapper {
     @Options(useGeneratedKeys = true,keyProperty = "id")
     int insert(User user);
 
-    @Update("update users set plan_id = #{planId},update_time = datetime('now','localtime') where id = #{userId}")
+    @Update("update users set plan_id = #{planId},update_time = NOW() " +
+            "where id = #{userId} and plan_id != #{planId}")
     int updatePlan(Long userId,Long planId);
 
-    @Update("update users set balance_cents = #{balanceCents},update_time = datetime('now','localtime') where id =#{userId}")
-    int updateBalance(Long userId, Long balanceCents);
+    @Update("update users set balance_cents =balance_cents + #{delta},update_time = NOW() " +
+            "where id =#{userId} and balance_cents+#{delta}>=0")
+    int updateBalance(Long userId, Long delta);
 }
